@@ -1,0 +1,100 @@
+<html>
+	<head>
+		<style>
+			body {
+				background-color: #222;
+			}
+			.left-bar {
+				color: #fff;
+				background-color: #444;
+				font-family: monospace;
+				position: absolute;
+				padding: 5px 10px;
+				left: 0px;
+				top: 0px;
+				bottom: 0px;
+				width: 280px;
+			}
+			.field-title {
+				margin-top: 5px;
+			}
+			input[type="text"] {
+				width: 100%;
+				border: none;
+				height: 22px;
+				background-color: #333;
+				color: #ccc;
+				font-family: monospace;
+			}
+			div.canvas {
+				position: absolute;
+				top: 0px;
+				right: 0px;
+				bottom: 0px;
+				left: 300px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="left-bar">
+			<div class="field-title">Image 1:</div> <input id="img1" type="file" accept="img/*"><br>
+			<div class="field-title">Image 2:</div> <input id="img2" type="file" accept="img/*"><br>
+			<div class="field-title">scale-x:</div> <input id="scale_x" value="1" type="text"><br>
+			<div class="field-title">scale-y:</div> <input id="scale_y" value="1" type="text"><br>
+			<div class="field-title">offset-x:</div> <input id="offset_x" value="0" type="text"><br>
+			<div class="field-title">offset-y:</div> <input id="offset_y" value="0" type="text"><br>
+			<div class="field-title">opacity:</div> <input id="opacity" value="1" type="text">
+		</div>
+		<div class="canvas">
+			<canvas></canvas>
+		</div>
+	</body>
+</html>
+<script>
+	const canvas = document.querySelector('canvas');
+	const ctx = canvas.getContext('2d');
+	let imgs = {};
+	const params = {};
+	const render = () => {
+		const { img1, img2 } = imgs;
+		if (img1) {
+			canvas.width = img1.width;
+			canvas.height = img1.height;
+			ctx.drawImage(img1, 0, 0);
+		}
+		if (img2) {
+			const sx = img2.width*params.scale_x;
+			const sy = img2.height*params.scale_y;
+			const x = canvas.width/2 - sx/2 + params.offset_x;
+			const y = canvas.height/2 - sy/2 + params.offset_y;
+			ctx.globalAlpha = params.opacity;
+			ctx.drawImage(img2, x, y, sx, sy);
+			ctx.globalAlpha = 1;
+		}
+	};
+	[...document.querySelectorAll('input[type="file"]')].forEach(input => {
+		const id = input.getAttribute('id');
+		input.onchange = () => {
+			const { files } = input;
+			if (files.length === 0) return;
+			const [ file ] = files;
+			const reader = new FileReader();
+			reader.onload = () => {
+				const img = document.createElement('img');
+				imgs[id] = img;
+				img.onload = render;
+				img.src = reader.result;
+			};
+			reader.readAsDataURL(file);
+		};
+	});
+	[...document.querySelectorAll('input[type="text"]')].forEach(input => {
+		const param = input.getAttribute('id');
+		params[param] = Number(input.value);
+		input.oninput = () => {
+			const param = input.getAttribute('id');
+			params[param] = Number(input.value);
+			render();
+		};
+	});
+</script>
